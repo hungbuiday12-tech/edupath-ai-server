@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 
 const app = express();
 
@@ -10,8 +10,8 @@ app.use(cors({
 
 app.use(express.json());
 
-const client = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
+const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
 });
 
 app.get("/", (req, res) => {
@@ -30,10 +30,13 @@ app.post("/api/ai", async (req, res) => {
             });
         }
 
-        const response = await client.responses.create({
-            model: "gpt-5-mini",
+        const response = await ai.models.generateContent({
+            model: "gemini-3.6-flash",
 
-            instructions: `
+            contents: question,
+
+            config: {
+                systemInstruction: `
 Bạn là AI Trợ giảng của EDUPATH.
 
 Bạn hỗ trợ học sinh THCS lớp 6 đến lớp 9.
@@ -54,13 +57,12 @@ Nếu học sinh hỏi bài tập:
 Nếu câu hỏi không rõ, hãy hỏi lại.
 
 Nếu không chắc chắn về thông tin, hãy nói rõ thay vì tự bịa.
-`,
-
-            input: question
+`
+            }
         });
 
         res.json({
-            answer: response.output_text
+            answer: response.text
         });
 
     } catch (error) {
